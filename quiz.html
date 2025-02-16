@@ -1,0 +1,282 @@
+<!-- quiz.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FinTube - Quiz Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --primary-blue: #2563eb;
+            --secondary-teal: #2dd4bf;
+            --accent-yellow: #f59e0b;
+            --dark-gray: #1f2937;
+            --light-gray: #f3f4f6;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: var(--light-gray);
+            color: var(--dark-gray);
+        }
+
+        .dashboard-container {
+            padding: 2rem;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .nav {
+            background: white;
+            padding: 1rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 2rem;
+            border-radius: 15px;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+        }
+
+        .card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 15px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+        }
+
+        .quiz-topic {
+            background: var(--light-gray);
+            padding: 1rem;
+            margin: 0.5rem 0;
+            border-radius: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.3s ease;
+        }
+
+        .quiz-topic:hover {
+            background: var(--primary-blue);
+            color: white;
+        }
+
+        .progress-ring {
+            width: 60px;
+            height: 60px;
+        }
+
+        .calendar {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr));
+            gap: 5px;
+        }
+
+        .calendar-day {
+            padding: 10px;
+            text-align: center;
+            border-radius: 8px;
+            background: var(--light-gray);
+        }
+
+        .test-day {
+            background: var(--secondary-teal);
+            color: white;
+            position: relative;
+        }
+
+        .test-day::after {
+            content: attr(data-score);
+            position: absolute;
+            bottom: 2px;
+            right: 2px;
+            font-size: 0.6rem;
+        }
+
+        .chart-container {
+            height: 300px;
+            position: relative;
+        }
+
+        .badge {
+            background: var(--accent-yellow);
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            display: inline-block;
+            margin: 0.5rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <nav class="nav">
+            <a href="index.html" class="logo">
+                <img src="images/fintube-logo.png" alt="FinTube Logo" style="height: 40px;">
+            </a>
+        </nav>
+
+        <div class="grid">
+            <!-- Quiz Topics -->
+            <div class="card">
+                <h2>📚 Available Quizzes</h2>
+                <div id="quizTopics"></div>
+            </div>
+
+            <!-- Performance Analytics -->
+            <div class="card">
+                <h2>📈 Performance Overview</h2>
+                <div class="chart-container">
+                    <canvas id="performanceChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Progress Tracking -->
+            <div class="card">
+                <h2>🏆 Achievements</h2>
+                <div class="badge">Gold Saver 🥇</div>
+                <div class="badge">Budget Master 💰</div>
+                <div class="chart-container">
+                    <canvas id="progressChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Calendar -->
+            <div class="card">
+                <h2>📅 Test Calendar</h2>
+                <div class="calendar" id="calendar"></div>
+            </div>
+
+            <!-- Topic Analysis -->
+            <div class="card">
+                <h2>📊 Topic Analysis</h2>
+                <div class="chart-container">
+                    <canvas id="topicChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Generate Quiz Topics
+        const quizTopics = [
+            'Budgeting Basics', 'Smart Saving', 'Investment Strategies', 
+            'Credit Management', 'Tax Fundamentals', 'Stock Market 101',
+            'Retirement Planning', 'Debt Management', 'Financial Goal Setting',
+            'Understanding Insurance', 'Compound Interest', 'Emergency Funds',
+            'College Savings', 'Cryptocurrency Basics', 'Real Estate Investing',
+            'Risk Management', 'Diversification', 'Inflation Impact',
+            'Credit Scores', 'Loan Types', 'Mortgage Basics', 'ETF Investing',
+            'Mutual Funds', 'Stock Valuation', 'Financial Fraud Prevention',
+            'Entrepreneurship Finance', 'Global Economics', 'Personal Finance',
+            'Behavioral Finance', 'Estate Planning', 'Tax Optimization',
+            'College Financial Aid', 'Charitable Giving', 'Peer-to-Peer Lending',
+            'Financial Independence', 'Budget Tracking', 'Expense Management',
+            'Financial Negotiation', 'Currency Exchange', 'Bull vs Bear Markets',
+            'Asset Allocation', 'Portfolio Management', 'Dividend Investing',
+            'Bonds 101', 'Commodities Trading', 'Retirement Accounts',
+            'Health Savings Accounts', '529 College Plans', 'Financial Advisors',
+            'Economic Indicators'
+        ];
+
+        const quizContainer = document.getElementById('quizTopics');
+        quizTopics.forEach((topic, index) => {
+            const quizElement = document.createElement('div');
+            quizElement.className = 'quiz-topic';
+            quizElement.innerHTML = `
+                <span>${index + 1}. ${topic}</span>
+                <span>${Math.floor(Math.random() * 1000)} Points</span>
+            `;
+            quizContainer.appendChild(quizElement);
+        });
+
+        // Performance Chart
+        new Chart(document.getElementById('performanceChart'), {
+            type: 'line',
+            data: {
+                labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+                datasets: [{
+                    label: 'Average Score',
+                    data: [65, 78, 82, 75, 88, 95],
+                    borderColor: var(--primary-blue),
+                    tension: 0.4,
+                    fill: true,
+                    backgroundColor: 'rgba(37, 99, 235, 0.2)'
+                }]
+            },
+            options: {
+                responsive: true,
+                animation: { duration: 1000 }
+            }
+        });
+
+        // Progress Chart
+        new Chart(document.getElementById('progressChart'), {
+            type: 'doughnut',
+            data: {
+                labels: ['Completed', 'Remaining'],
+                datasets: [{
+                    data: [35, 65],
+                    backgroundColor: [var(--secondary-teal), var(--light-gray)]
+                }]
+            },
+            options: {
+                responsive: true,
+                animation: { duration: 1000 }
+            }
+        });
+
+        // Topic Analysis Chart
+        new Chart(document.getElementById('topicChart'), {
+            type: 'bar',
+            data: {
+                labels: ['Budgeting', 'Saving', 'Investing', 'Credit', 'Taxes'],
+                datasets: [{
+                    label: 'Strong Areas',
+                    data: [85, 90, 78, 82, 75],
+                    backgroundColor: var(--secondary-teal)
+                },
+                {
+                    label: 'Weak Areas',
+                    data: [15, 10, 22, 18, 25],
+                    backgroundColor: var(--accent-yellow)
+                }]
+            },
+            options: {
+                responsive: true,
+                animation: { duration: 1000 }
+            }
+        });
+
+        // Generate Calendar
+        const calendar = document.getElementById('calendar');
+        const daysInMonth = 30;
+        const testDays = [3, 7, 12, 18, 25]; // Example test days
+
+        for (let i = 1; i <= daysInMonth; i++) {
+            const day = document.createElement('div');
+            day.className = `calendar-day ${testDays.includes(i) ? 'test-day' : ''}`;
+            day.textContent = i;
+            if(testDays.includes(i)) {
+                day.dataset.score = `${Math.floor(Math.random() * 20) + 80}%`;
+            }
+            calendar.appendChild(day);
+        }
+    </script>
+</body>
+</html>
